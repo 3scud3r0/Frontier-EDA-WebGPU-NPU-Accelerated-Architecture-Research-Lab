@@ -1,0 +1,78 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="theme-color" content="#071018" />
+  <meta name="description" content="Frontier EDA v4 Research Edition — WebGPU, WebNN, TinyHDL and synthesizable Verilog in the browser." />
+  <link rel="stylesheet" href="./styles.css" />
+  <script src="./coi-serviceworker.js"></script>
+  <title>Frontier EDA · v4 Research Edition</title>
+</head>
+<body>
+  <header class="topbar">
+    <div>
+      <div class="eyebrow">VLSI · COMPUTER ARCHITECTURE · EDGE AI</div>
+      <h1>Frontier EDA <span>v4 Research Edition</span></h1>
+    </div>
+    <div class="top-status">
+      <span id="isolation-state" class="badge">CHECKING COI</span>
+      <span id="status-line" class="status-line" data-kind="busy">Bootstrapping…</span>
+    </div>
+  </header>
+
+  <main class="dashboard">
+    <section class="metric-strip">
+      <article class="metric"><span>NAND gates</span><strong id="metric-gates">—</strong></article>
+      <article class="metric"><span>Logic depth</span><strong id="metric-depth">—</strong></article>
+      <article class="metric"><span>Critical path</span><strong id="metric-critical">—</strong></article>
+      <article class="metric"><span>AI gate savings</span><strong id="metric-ai-savings">—</strong></article>
+      <article class="metric"><span>GPU throughput</span><strong id="gpu-rate">—</strong></article>
+      <article class="metric"><span>Branch accuracy</span><strong id="npu-accuracy">0.0%</strong></article>
+    </section>
+    <section class="grid grid-main">
+      <article class="panel editor-panel">
+        <div class="panel-head"><div><span class="kicker">TinyHDL</span><h2>Logic synthesis</h2></div><div class="actions"><button id="btn-synthesize">Synthesize</button><button id="btn-optimize">AI Optimize</button><button id="btn-export">Export .v</button><button id="btn-save" class="quiet">Save</button></div></div>
+        <textarea id="hdl-source" spellcheck="false" aria-label="TinyHDL source"></textarea>
+        <div class="toolbar-row"><label>Stress fabric <select id="stress-copies"><option value="1">1× functional</option><option value="256" selected>256×</option><option value="4096">4K×</option><option value="65536">65K× (~1M NAND)</option></select></label></div>
+      </article>
+      <article class="panel heatmap-panel">
+        <div class="panel-head"><div><span class="kicker">Physical proxy</span><h2>Silicon activity heatmap</h2></div><div class="legend"><i></i> cold <i></i> switching</div></div>
+        <canvas id="silicon-heatmap"></canvas>
+      </article>
+      <article class="panel engines-panel">
+        <div class="panel-head"><div><span class="kicker">Accelerators</span><h2>GPU / NPU telemetry</h2></div></div>
+        <dl class="telemetry">
+          <dt>Fabric backend</dt><dd id="gpu-backend">—</dd>
+          <dt>GPU adapter</dt><dd id="gpu-adapter">—</dd>
+          <dt>Resident nodes</dt><dd id="gpu-gates">—</dd>
+          <dt>Neural backend</dt><dd id="npu-backend">—</dd>
+          <dt>Predictions</dt><dd id="npu-predictions">0</dd>
+          <dt>State bridge</dt><dd id="shared-state">—</dd>
+        </dl>
+      </article>
+    </section>
+    <section class="grid grid-charts">
+      <article class="panel"><div class="panel-head"><div><span class="kicker">Compute shader</span><h2>NAND evaluation throughput</h2></div></div><canvas id="timing-chart" class="chart"></canvas></article>
+      <article class="panel"><div class="panel-head"><div><span class="kicker">Neural µarch</span><h2>Branch prediction learning curve</h2></div></div><canvas id="branch-chart" class="chart"></canvas></article>
+      <article class="panel cpu-panel">
+        <div class="panel-head"><div><span class="kicker">Shared CPU state</span><h2>Worker execution</h2></div><div class="actions compact"><button id="btn-cpu-load">Load</button><button id="btn-cpu-run">Run</button><button id="btn-cpu-pause">Pause</button><button id="btn-cpu-step">Step</button><button id="btn-cpu-reset" class="quiet">Reset</button></div></div>
+        <div class="cpu-metrics"><div><span>PC</span><strong id="cpu-pc">0x0000</strong></div><div><span>IR</span><strong id="cpu-ir">0x0000</strong></div><div><span>Cycles</span><strong id="cpu-cycles">0</strong></div><div><span>L1 hit rate</span><strong id="cache-rate">0%</strong></div></div>
+        <textarea id="asm-source" spellcheck="false" aria-label="NAND-16 assembly"></textarea>
+      </article>
+    </section>
+    <section class="grid grid-lab">
+      <article class="panel"><div class="panel-head"><div><span class="kicker">EDA neural</span><h2>Optimization report</h2></div></div><pre id="optimization-output" class="terminal">Run AI Optimize to analyze structural common subexpressions and fan-out.</pre></article>
+      <article class="panel"><div class="panel-head"><div><span class="kicker">Industry export</span><h2>Synthesizable Verilog</h2></div></div><textarea id="verilog-output" class="code-output" spellcheck="false" readonly></textarea></article>
+    </section>
+    <section class="grid grid-bottom">
+      <article class="panel table-panel">
+        <div class="panel-head"><div><span class="kicker">Graph inspection</span><h2>Netlist nodes</h2></div></div>
+        <div class="table-wrap"><table><thead><tr><th>#</th><th>Label</th><th>Kind</th><th>A</th><th>B</th><th>Level</th><th>Fanout</th></tr></thead><tbody id="netlist-table"></tbody></table></div>
+      </article>
+      <article class="panel log-panel"><div class="panel-head"><div><span class="kicker">Research log</span><h2>Runtime events</h2></div></div><pre id="event-log" class="terminal"></pre></article>
+    </section>
+  </main>
+  <script type="module" src="./main.js"></script>
+</body>
+</html>

@@ -1,0 +1,6 @@
+{
+  "version": 1,
+  "branchPredictor": null,
+  "edaOptimizer": null,
+  "note": "The v4 runtime contains native WebNN graph fallbacks and an online perceptron. Drop compatible ONNX models here and configure them from the UI to use ONNX Runtime Web/WebNN."
+}
