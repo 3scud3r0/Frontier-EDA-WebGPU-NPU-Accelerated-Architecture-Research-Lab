@@ -14,6 +14,19 @@ function setZN(value) {
 }
 function nextWord(pc) { return rom[(pc + 1) & 0xffff] ?? 0; }
 
+const BRANCH_FLUSH_PENALTY = 3;
+function resolveBranch(pc, target, taken, fallthrough) {
+  const prediction = cpu.getBranchPrediction(pc, target);
+  const predictedNext = prediction.taken ? prediction.target : fallthrough;
+  const actualNext = taken ? target : fallthrough;
+  cpu.recordBranch(pc, target, taken);
+  if (predictedNext !== actualNext) {
+    cpu.add(Slot.MISPREDICTIONS, 1);
+    cpu.add(Slot.CYCLES, BRANCH_FLUSH_PENALTY);
+  }
+  return actualNext;
+}
+
 function step() {
   let pc = cpu.get(Slot.PC) & 0xffff;
   const ir = rom[pc] ?? 0;
@@ -41,16 +54,16 @@ function step() {
       cpu.cacheWrite(addr, rA, memory); break;
     }
     case OPCODE.JMP: {
-      const target = nextWord(pc); cpu.recordBranch(pc, target, true); next = target; break;
+      const target = nextWord(pc); next = resolveBranch(pc, target, true, (pc + 2) & 0xffff); break;
     }
     case OPCODE.JZ: {
-      const target = nextWord(pc); const taken = rA === 0; cpu.recordBranch(pc, target, taken); next = taken ? target : (pc + 2) & 0xffff; break;
+      const target = nextWord(pc); const taken = rA === 0; next = resolveBranch(pc, target, taken, (pc + 2) & 0xffff); break;
     }
     case OPCODE.JNZ: {
-      const target = nextWord(pc); const taken = rA !== 0; cpu.recordBranch(pc, target, taken); next = taken ? target : (pc + 2) & 0xffff; break;
+      const target = nextWord(pc); const taken = rA !== 0; next = resolveBranch(pc, target, taken, (pc + 2) & 0xffff); break;
     }
     case OPCODE.CALL: {
-      const target = nextWord(pc); stack.push((pc + 2) & 0xffff); cpu.set(Slot.SP, (cpu.get(Slot.SP) - 1) & 0xffff); cpu.recordBranch(pc, target, true); next = target; break;
+      const target = nextWord(pc); stack.push((pc + 2) & 0xffff); cpu.set(Slot.SP, (cpu.get(Slot.SP) - 1) & 0xffff); next = resolveBranch(pc, target, true, (pc + 2) & 0xffff); break;
     }
     case OPCODE.RET: next = stack.pop() ?? next; cpu.set(Slot.SP, (cpu.get(Slot.SP) + 1) & 0xffff); break;
     case OPCODE.HALT: cpu.set(Slot.HALTED, 1); running = false; break;

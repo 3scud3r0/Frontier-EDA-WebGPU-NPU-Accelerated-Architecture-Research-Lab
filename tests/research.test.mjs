@@ -47,6 +47,9 @@ test('Shared CPU state exposes Atomics-compatible registers and L1 cache', () =>
   assert.equal(snap.cacheHits, 1);
   cpu.recordBranch(0x10, 0x20, true);
   assert.equal(cpu.get(Slot.BRANCHES), 1);
+  assert.equal(cpu.getBranchPrediction(0x10, 0x20).valid, false);
+  cpu.setBranchPrediction(0x10, 0x20, true);
+  assert.deepEqual(cpu.getBranchPrediction(0x10, 0x20), { valid: true, taken: true, target: 0x20 });
 });
 test('Assembler resolves branch labels and emits executable words', () => {
   const program = assemble(DEFAULT_ASSEMBLY);

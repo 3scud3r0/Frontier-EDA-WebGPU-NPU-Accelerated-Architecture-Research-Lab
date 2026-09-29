@@ -2,6 +2,7 @@ export const CPU_WORDS = 32;
 export const REG_COUNT = 8;
 export const TRACE_LENGTH = 256;
 export const CACHE_LINES = 64;
+export const PREDICTOR_LINES = 64;
 
 export const Slot = Object.freeze({
   PC: 0,
@@ -27,7 +28,11 @@ const CACHE_VALID_OFFSET = CACHE_DATA_OFFSET + CACHE_LINES * 4;
 const TRACE_PC_OFFSET = CACHE_VALID_OFFSET + CACHE_LINES * 4;
 const TRACE_TARGET_OFFSET = TRACE_PC_OFFSET + TRACE_LENGTH * 4;
 const TRACE_TAKEN_OFFSET = TRACE_TARGET_OFFSET + TRACE_LENGTH * 4;
-const TOTAL_BYTES = TRACE_TAKEN_OFFSET + TRACE_LENGTH * 4;
+const PRED_TAG_OFFSET = TRACE_TAKEN_OFFSET + TRACE_LENGTH * 4;
+const PRED_TARGET_OFFSET = PRED_TAG_OFFSET + PREDICTOR_LINES * 4;
+const PRED_TAKEN_OFFSET = PRED_TARGET_OFFSET + PREDICTOR_LINES * 4;
+const PRED_VALID_OFFSET = PRED_TAKEN_OFFSET + PREDICTOR_LINES * 4;
+const TOTAL_BYTES = PRED_VALID_OFFSET + PREDICTOR_LINES * 4;
 
 function atomicLoad(view, index, shared) { return shared ? Atomics.load(view, index) : view[index]; }
 function atomicStore(view, index, value, shared) { if (shared) Atomics.store(view, index, value); else view[index] = value; return value; }
@@ -46,6 +51,10 @@ export class CPUStateShared {
     this.tracePC = new Uint32Array(this.buffer, TRACE_PC_OFFSET, TRACE_LENGTH);
     this.traceTarget = new Uint32Array(this.buffer, TRACE_TARGET_OFFSET, TRACE_LENGTH);
     this.traceTaken = new Int32Array(this.buffer, TRACE_TAKEN_OFFSET, TRACE_LENGTH);
+    this.predTags = new Int32Array(this.buffer, PRED_TAG_OFFSET, PREDICTOR_LINES);
+    this.predTargets = new Uint32Array(this.buffer, PRED_TARGET_OFFSET, PREDICTOR_LINES);
+    this.predTaken = new Int32Array(this.buffer, PRED_TAKEN_OFFSET, PREDICTOR_LINES);
+    this.predValid = new Int32Array(this.buffer, PRED_VALID_OFFSET, PREDICTOR_LINES);
     if (!buffer) this.reset();
   }
 
@@ -60,6 +69,10 @@ export class CPUStateShared {
     this.tracePC.fill(0);
     this.traceTarget.fill(0);
     this.traceTaken.fill(0);
+    this.predTags.fill(-1);
+    this.predTargets.fill(0);
+    this.predTaken.fill(0);
+    this.predValid.fill(0);
     this.set(Slot.SP, 0xfffe);
   }
 
@@ -110,6 +123,28 @@ export class CPUStateShared {
   readBranch(index) {
     const i = ((index % TRACE_LENGTH) + TRACE_LENGTH) % TRACE_LENGTH;
     return { pc: this.tracePC[i] >>> 0, target: this.traceTarget[i] >>> 0, taken: Boolean(this.traceTaken[i]) };
+  }
+
+  setBranchPrediction(pc, target, taken) {
+    const branchPC = pc & 0xffff;
+    const line = branchPC & (PREDICTOR_LINES - 1);
+    atomicStore(this.predTags, line, branchPC, this.shared);
+    atomicStore(this.predTargets, line, target & 0xffff, this.shared);
+    atomicStore(this.predTaken, line, taken ? 1 : 0, this.shared);
+    atomicStore(this.predValid, line, 1, this.shared);
+  }
+
+  getBranchPrediction(pc, fallbackTarget = 0) {
+    const branchPC = pc & 0xffff;
+    const line = branchPC & (PREDICTOR_LINES - 1);
+    const valid = atomicLoad(this.predValid, line, this.shared);
+    const tag = atomicLoad(this.predTags, line, this.shared);
+    if (!valid || tag !== branchPC) return { valid: false, taken: false, target: fallbackTarget & 0xffff };
+    return {
+      valid: true,
+      taken: Boolean(atomicLoad(this.predTaken, line, this.shared)),
+      target: atomicLoad(this.predTargets, line, this.shared) & 0xffff,
+    };
   }
 
   snapshot() {

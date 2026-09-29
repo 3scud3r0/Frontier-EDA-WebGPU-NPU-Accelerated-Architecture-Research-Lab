@@ -116,7 +116,10 @@ export async function bootstrapResearchLab() {
         const branch = cpu.readBranch(lastTraceHead);
         const prediction = await predictor.predict(branch.pc, branch.target);
         predictor.update(branch.pc, branch.target, branch.taken, prediction.taken);
-        if (prediction.taken !== branch.taken) cpu.add(Slot.MISPREDICTIONS, 1);
+        // Feed the learned prediction back into the shared branch-prediction table.
+        // The CPU worker consumes this entry before resolving the next occurrence.
+        const nextPrediction = await predictor.predict(branch.pc, branch.target);
+        cpu.setBranchPrediction(branch.pc, branch.target, nextPrediction.taken);
         lastTraceHead++;
       }
       const metrics = predictor.metrics();
