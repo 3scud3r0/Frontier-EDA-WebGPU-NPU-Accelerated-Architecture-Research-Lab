@@ -21,6 +21,55 @@ Além disso, integra **WebNN/ONNX** para pesquisa de arquiteturas assistidas por
 * **Industry-Standard Export:** Sintetizou uma nova ALU customizada? Exporte a Netlist NAND diretamente para código **Synthesizable Verilog (`.v`)** e faça flash em FPGAs físicas (Xilinx, Altera/Intel).
 * **Flat Data-Dense UI:** Dashboard estilo Grafana focado na engenharia de hardware: Heatmaps de silício, escopos de timing multicanal e métricas de cache.
 
+## 🗂️ Estrutura de Diretórios e Arquivos
+
+```text
+frontier-eda/
+├── .github/
+│   └── workflows/
+│       └── deploy-pages.yml
+├── public/
+│   ├── coi-serviceworker.js
+│   └── models/
+│       ├── README.md
+│       └── manifest.json
+├── src/
+│   ├── compute/
+│   │   ├── gpu_fabric.js
+│   │   └── logic_eval.wgsl
+│   ├── intelligence/
+│   │   └── npu_core.js
+│   ├── core/
+│   │   ├── cpu_state.js
+│   │   ├── cpu_worker.js
+│   │   ├── linker.js
+│   │   └── assembler.js
+│   ├── hdl/
+│   │   └── netlist_graph.js
+│   ├── export/
+│   │   └── verilog.js
+│   ├── storage/
+│   │   └── persistence.js
+│   ├── ui/
+│   │   ├── dashboard.js
+│   │   └── charts.js
+│   ├── index.html
+│   ├── styles.css
+│   ├── app.js
+│   └── main.js
+├── tests/
+│   └── research.test.mjs
+├── docs/
+│   ├── dashboard-preview.png
+│   └── RESEARCH_NOTES.md
+├── .gitignore
+├── LICENSE
+├── package.json
+├── server.mjs
+├── vite.config.js
+└── README.md
+```
+
 ## 🚀 Quick Start (Local Development)
 
 Devido ao uso intenso de `SharedArrayBuffer` para troca de contexto CPU ↔ GPU em tempo real, o ambiente de desenvolvimento requer *Cross-Origin Isolation*. O Vite já está configurado para isso.
