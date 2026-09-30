@@ -54,6 +54,7 @@ frontier-eda/
 │   │   ├── dashboard.js
 │   │   └── charts.js
 │   ├── index.html
+│   ├── coi-bootstrap.js
 │   ├── styles.css
 │   ├── app.js
 │   └── main.js
@@ -82,6 +83,17 @@ npm run dev
 ```
 
 Abra http://localhost:5173 no navegador com suporte a WebGPU.
+
+## 🔐 Cross-Origin Isolation no GitHub Pages
+
+O GitHub Pages não permite configurar diretamente os headers HTTP `Cross-Origin-Opener-Policy` e `Cross-Origin-Embedder-Policy`. Sem isolamento de origem, o navegador bloqueia `SharedArrayBuffer`.
+
+A v4 resolve isso em duas camadas:
+
+1. Em desenvolvimento local, `vite.config.js` e `server.mjs` emitem COOP/COEP no servidor.
+2. No GitHub Pages, `src/coi-bootstrap.js` registra `public/coi-serviceworker.js`. O Service Worker passa a servir os recursos same-origin com os headers de isolamento e recarrega a aplicação uma única vez quando assume o controle.
+
+Assim, CPU Worker, `SharedArrayBuffer` e o dashboard podem operar no mesmo modelo de memória compartilhada também em hospedagem estática.
 
 ## 🧠 Architecture Overview
 
